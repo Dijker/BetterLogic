@@ -8,7 +8,7 @@
         vm.selected = {};
         vm.homey;
 
-        vm.setHomey = function(homey, scope) {
+        vm.init = function(homey, scope) {
             vm.homey = homey;
             vm.homey.get('variables', function(err, newVariables) {
                 console.log(newVariables);
@@ -19,17 +19,15 @@
                     vm.variables = newVariables;
                 });
             });
-            vm.homey.on('setting_changed', function(name) {
+            vm.homey.on('setting_changed', function (name) {
+                console.log(name);
                 vm.homey.get('variables', function(err, newVariables) {
-                    console.log(newVariables);
                     if (!newVariables) {
                         newVariables = [];
                     }
-                    $scope.$apply(function() {
+                    scope.$apply(function() {
                         vm.variables = newVariables;
                     });
-
-                    console.log(vm.variables);
                 });
             });
         }
@@ -46,21 +44,20 @@
                 remove: false
             };
             vm.variables.push(variable);
-            storeVariable(angular.copy(vm.variables), variable);
+            storeVariable(variable);
             vm.errorMessage = '';
             vm.newVariable = {}
         };
         vm.deleteAll = function() {
             vm.variables = [];
-            vm.homey.set('deleteAll', []);
-
-        }
+            deleteAllVariables();
+        };
         vm.removeVariable = function(row) {
             var index = vm.variables.indexOf(row);
             var toDeleteVariable = vm.variables[index];
             toDeleteVariable.remove = true;
             vm.variables.splice(index, 1);
-            storeVariable(angular.copy(vm.variables), toDeleteVariable);
+            storeVariable(toDeleteVariable);
         };
 
         vm.showExport = function() {
@@ -73,7 +70,9 @@
         vm.import = function() {
             var newVars = angular.fromJson(vm.importJson);
             vm.deleteAll();
-            vm.homey.set('variables', newVars);
+            newVars.forEach(function(variable) {
+                storeVariable(variable);
+            });
             vm.variables = newVars;
         };
 
@@ -87,7 +86,7 @@
             var indexDisplay = $scope.displayedCollection.indexOf(row);
             vm.variables[index] = angular.copy(vm.selected);
             $scope.displayedCollection[indexDisplay] = angular.copy(vm.selected);
-            storeVariable(angular.copy(vm.variables), vm.selected);
+            storeVariable(vm.selected);
             vm.reset();
         };
 
@@ -101,7 +100,7 @@
 
             vm.variables[index] = angular.copy(vm.selected);
             $scope.displayedCollection[indexDisplay] = angular.copy(vm.selected);
-            storeVariable(angular.copy(vm.variables), vm.selected);
+            storeVariable(vm.selected);
             vm.reset();
         };
 
@@ -127,16 +126,32 @@
             else return 'display';
         };
 
-        function storeVariable(variables, variable) {
+        function storeVariable(variable) {
             var changeObject = {
-                variables: variables,
                 variable: variable
             };
+            vm.homey.set('changedvariables', changeObject, function (err) { console.log(err)});
+        }
 
-            vm.homey.set('changedVariables', changeObject);
+        function deleteAllVariables() {
+            //I need to pass in this dummy or else it does not work....?
+            var dummyVar = {
+                name: "",
+                type: "",
+                value: "",
+                lastChanged: getShortDate(),
+                remove: false
+            };
+            var dummyChangedObject = {
+                variable: dummyVar
+            };
+
+            vm.homey.set('deleteall', dummyChangedObject, function (err) { console.log(err)});            
         }
     });
 
 function getShortDate() {
     return new Date().toISOString();
 }
+
+function setVariables(variables) {}
