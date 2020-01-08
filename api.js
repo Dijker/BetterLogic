@@ -1,39 +1,39 @@
 ﻿"use strict";
 
-var variableManager = require('./lib/variablemanagement/variablemanagement.js');
+var variableManager = require('./lib/variablemanager.js');
 
 var util = require('./lib/util/util.js');
 
 module.exports = [
     {
-        description: "HTTP get variable",
-        method: "GET",
-        path: "/:variable",
-        requires_authorization: true,
-        fn: function (callback, args) {
-           
-            if (args && args.params && args.params.variable) {
-                if (args.params.variable.toLowerCase() === 'all') {
-                    callback(null,variableManager.getVariables());
-                    return;
-                }
-                var variable = variableManager.getVariable(args.params.variable);
-                if(variable){
-                    callback(null, { name: variable.name, type : variable.type, value: variable.value });
-                    return;
-                }
-                return;
-            }
-            callback("Incorrect call");
-        }
-    }, {
+      description: "HTTP get variable",
+      method: "GET",
+      path: "/:variable",
+      requires_authorization: true,
+      fn: function (args, callback) {
+
+          if (args && args.params && args.params.variable) {
+              if (args.params.variable.toLowerCase() === 'all') {
+                  callback(null,variableManager.getVariables());
+                  return;
+              }
+              var variable = variableManager.getVariable(args.params.variable);
+              if(variable){
+                  callback(null, { name: variable.name, type : variable.type, value: variable.value });
+                  return;
+              }
+          }
+          callback("Incorrect call");
+      }
+  },
+    {
         description: "HTTP post trigger",
         method: "put",
         path: "/trigger/:variable",
         requires_authorization: true,
-        fn: function (callback, args) {
+        fn: function (args, callback) {
             if (args && args.params && args.params.variable) {
-                
+
                 var variable = variableManager.getVariable(args.params.variable);
                 if (!variable) {
                     callback("Variable not found");
@@ -43,20 +43,20 @@ module.exports = [
                     callback("Only a trigger can be triggered");
                     return;
                 }
-               
+
                variableManager.updateVariable(variable.name, new Date().toISOString(), variable.type);
                 callback(null, "OK");
                 return;
             }
             callback("Incorect call");
         }
-    }, 
+    },
     {
         description: "HTTP post value",
         method: "put",
         path: "/:variable/:action/:value",
         requires_authorization: true,
-        fn: function(callback, args) {
+        fn: function (args, callback) {
             if (args && args.params && args.params.variable && args.params.value && args.params.action) {
                 if (args.params.action.toLowerCase()!== 'i' && args.params.action.toLowerCase() !== 'd' &&
                     args.params.action.toLowerCase() !== 'increment' && args.params.action.toLowerCase() !== 'decrement' ) {
@@ -84,14 +84,15 @@ module.exports = [
                     return;
                 }
                 callback("Incorect call");
+          	}
         }
-        }
-    },{
+    },
+    {
         description: "HTTP post value",
         method: "put",
         path: "/:variable/:value",
         requires_authorization: true,
-        fn: function(callback, args) {
+        fn: function (args, callback) {
             if (args && args.params && args.params.variable && args.params.value) {
                 var variable = variableManager.getVariable(args.params.variable);
                 if (variable) {
@@ -137,7 +138,6 @@ module.exports = [
 
             }
             callback("Incorect call");
-
         }
     }
 ]
